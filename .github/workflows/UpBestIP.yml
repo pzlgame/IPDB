@@ -2,36 +2,44 @@ name: 更新 UpBestIP
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]  # 如果您的默认分支是 master，请改为 [master]
     paths:
-      - "BestCF/bestcfv4.txt"      # 监听 BestCF/bestcf.txt 文件的更新
-      - "BestCF/bestcfv6.txt"      # 监听 BestCF/bestcf.txt 文件的更新
-      - "BestProxy/bestproxy.txt"  # 监听 BestProxy/bestproxy.txt 文件的更新
-      - "BestGC/bestgcv4.txt"      # 监听 BestGC/bestgcv4.txt 文件的更新
-      - "BestGC/bestgcv6.txt"      # 监听 BestGC/bestgcv6.txt 文件的更新
-      - "BestAli/bestaliv4.txt"      # 监听 BestGC/bestgcv6.txt 文件的更新
-  workflow_dispatch:             # 支持手动触发
+      - "BestCF/bestcfv4.txt"
+      - "BestCF/bestcfv6.txt"
+      - "BestProxy/bestproxy.txt"
+      - "BestGC/bestgcv4.txt"
+      - "BestGC/bestgcv6.txt"
+      - "BestAli/bestaliv4.txt"
+  workflow_dispatch:  # 支持手动触发
+
+permissions:
+  contents: write  # 如果需要 commit 和 push，添加此权限
 
 jobs:
   UpBestIP:
     runs-on: ubuntu-latest
     steps:
-      # 检出仓库代码
       - name: 检出代码
         uses: actions/checkout@v4
 
-      # 设置 Python 环境
-      - name: 设置 Python 环境
+      - name: 设置Python环境
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'  # 可根据需要指定 Python 版本，例如 3.8
+          python-version: '3.10'  # 指定确切版本，避免 '3.x' 的模糊性
 
-      # 安装依赖
-      - name: 安装依赖
-        run: pip install requests
+      - name: 依赖安装
+        run: pip install requests cloudflare  # 添加 cloudflare，如果脚本需要；否则移除
 
-      # 运行更新 DNS 的 Python 脚本
       - name: 更新 BestIP
-        run: python .github/workflows/UpBestIP.py
+        run: python .github/workflows/UpBestIP.py  # 建议移动脚本到 scripts/UpBestIP.py 并改为 python scripts/UpBestIP.py
         env:
-          CF_TOKENS: ${{ secrets.CF_TOKENS }}  # 从仓库 Secrets 中获取 CF_TOKENS 环境变量
+          CF_TOKENS: ${{ secrets.CF_TOKENS }}  # 从仓库 Secrets 中取得
+
+      # 可选：如果脚本更新了文件，添加 commit 和 push 步骤
+      - name: 提交变更
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add .
+          git commit -m "自动更新 BestIP 数据" || echo "无变更"
+          git push
